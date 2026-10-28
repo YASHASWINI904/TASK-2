@@ -8,20 +8,24 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "node server.js",
+    "start": "node server.js",
     "dev:full": "concurrently -k \"npm:server\" \"npm:dev\""
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "lucide-react": "^0.468.0",
-    "recharts": "^2.15.0",
-    "papaparse": "^5.4.1",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^9.2.1",
     "express": "^5.1.0",
-    "helmet": "^8.1.0",
     "express-rate-limit": "^8.1.0",
-    "concurrently": "^9.2.1"
+    "helmet": "^8.1.0",
+    "lucide-react": "^0.468.0",
+    "papaparse": "^5.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-is": "^19.0.0",
+    "recharts": "^2.15.4",
+    "vite": "^8.3.5"
   },
-  "devDependencies": {}
+  "overrides": {
+    "react-is": "$react-is"
+  }
 }

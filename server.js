@@ -9,21 +9,25 @@ import { fileURLToPath } from 'node:url';
 
 const scrypt = promisify(scryptCallback);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, 'data');
+const isVercel = Boolean(process.env.VERCEL);
+const dataDir = isVercel ? path.join('/tmp', 'data') : path.join(__dirname, 'data');
 const dbPath = path.join(dataDir, 'store.json');
+const distDir = path.join(__dirname, 'dist');
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
 const PORT = Number(process.env.PORT || 3001);
 const COOKIE = 'fraudshield_session';
 const SESSION_MS = 1000 * 60 * 60 * 8;
 
+app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '20kb', strict: true }));
 app.use((req, res, next) => {
   if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) && req.headers.origin) {
-    const expected = `${req.protocol}://${req.get('host')}`;
-    if (req.headers.origin !== expected) return res.status(403).json({ error: 'Request origin rejected.' });
+    const host = req.get('host');
+    const originHost = req.headers.origin.replace(/^https?:\/\//, '');
+    if (originHost !== host) return res.status(403).json({ error: 'Request origin rejected.' });
   }
   next();
 });
@@ -132,5 +136,19 @@ app.use((err, _req, res, _next) => {
   console.error('API error:', err.message); res.status(500).json({ error: 'Something went wrong. Please try again.' });
 });
 
-await loadStore();
-app.listen(PORT, () => console.log(`FraudShield API listening on http://localhost:${PORT}`));
+// Serve static frontend assets if built
+app.use(express.static(distDir));
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(distDir, 'index.html'), err => {
+    if (err) next();
+  });
+});
+
+if (!isVercel) {
+  await loadStore();
+  app.listen(PORT, () => console.log(`FraudShield server listening on http://localhost:${PORT}`));
+}
+
+export { app, loadStore };
+export default app;
